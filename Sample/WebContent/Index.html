@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+   <title>Web Socket</title>
+   <style type="text/css">
+   .chat-wrapper{
+   width: 210px;
+   height: 320px;
+   }
+   
+   
+  .box{
+   max-width: 200px;
+   max-height: 300px;
+   overflow: scroll;
+   background-color: yellow;
+   }
+   
+   #response{
+   max-width: 200px;
+   }
+   
+::-webkit-scrollbar {  
+    width:10px;  
+    height: 10px;
+}  
+::-webkit-scrollbar-track {  
+    background-color: #000000;  
+    border-left: 1px solid #ccc;
+    border-radius:5px;  
+}  
+::-webkit-scrollbar-thumb {  
+    background-color: #666666;  
+    width:9px;  
+    border-radius:4px;
+    height: 20px; 
+}  
+::-webkit-scrollbar-thumb:hover {  
+    background-color: #aaa;  
+}
+   
+   
+   .small{
+   font-size: 8pt;
+   }
+   
+   .received, .label-info{
+   width: 20%;
+   }
+    
+    .label-info{
+   border-radius:5px;
+   background-color: #ff22cc;
+      } 
+   
+     .badge{
+    width:80%;
+    border-radius:10px;
+    background-color: #ffffff;
+     }
+
+  .red{
+  border: solid 2px #ff0000;
+  border-radius:5px;
+  }
+   </style>
+  <script type="text/javascript" src="jquery-2.1.0.js"></script> 
+  <script type="text/javascript" src="jquery-ui.js"></script>
+<script lang="javascript"  type="text/javascript">
+var wsUri;
+//= getRooturi() + "/Sample/hello";
+var webSocket ; 
+//= new WebSocket(wsUri);
+var $nickName;
+var $message;
+var $chatWindow;
+var room = '';
+
+
+function connectToServer(){
+	room = $('#chatroom option:selected').val();
+	webSocket = new WebSocket(wsUri + room);
+	webSocket.onmessage = onMessageReceived;
+}
+
+
+$('document').ready(function(){
+	
+	wsUri = getRooturi() + "/Sample/hello/";
+	$nickName  = $('#nickName');
+	
+	$message = $('#message');
+	$chatWindow = $('#response');
+	$('.chat-wrapper').hide();
+	$nickName.focus();
+	
+	
+	$('#enterRoom').click(function(evt) {
+		evt.preventDefault();
+		connectToServer();
+		$('.chat-wrapper h2').text('Chat # '+ $nickName.val()  + "@" + room);
+		$('.chat-signin').hide(1000);
+		$('.chat-wrapper').show(1000);
+		$message.focus();
+	});
+	
+	
+	
+	$('#do-chat').submit(function(evt) {
+		evt.preventDefault();
+		send_message();
+	});
+	
+	  
+	$('#leaveRoom').click(function(){
+	      webSocket.close(1000, 'Leaving');
+	      $chatWindow.empty();
+		  $('.chat-wrapper').hide();
+		  $('.chat-signin').show();
+		  $nickName.focus();
+	  });
+	
+	});
+	
+// webSocket.onopen = function(evt){
+// 	onOpen(evt);
+// };
+
+// webSocket.onmessage = function(evt){
+// 	onMessage(evt);
+// };
+
+// webSocket.onerror = function(evt){
+// 	onError(evt);
+// };
+
+// webSocket.onclose = function(evt){
+//      onClose(evt);	
+// };
+
+
+
+	function getRooturi (){
+		return "ws://" + window.location.host ;
+	   }
+	
+	
+
+	
+// 	function onOpen(evt){
+// 		   writeToScreen("Connected to Endpoint!");
+// 	}
+	
+// 	function onClose(evt){
+// 		 writeToScreen("Connection closed successfully");
+// 	}
+		
+// 	function onError(evt){
+// 		   writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+// 		   webSocket.close(1000, "Error happened");
+// 	}
+	
+	
+	function onMessageReceived(evt){
+		var msg = JSON.parse(evt.data);
+		var $messageLine = $('<tr class="small"><td class="received">' + msg.received
+		+ '</td><td class="user label label-info">' + msg.sender
+		+ '</td><td class="message badge">' + msg.message
+		+ '</td></tr>');
+		
+		$chatWindow.append($messageLine);
+	}
+	
+	
+// 	function writeToScreen(msg){
+// 		 var para = document.createElement("p");
+//          para.style.wordWrap = "break-word";
+//          para.innerHTML = msg;
+//          output.appendChild(para);
+// 	}
+	
+	function send_message(){
+		var msg = '{"message":"' + $message.val() + '", "sender":"'
+		+ $nickName.val() + '", "received":""}';
+		
+		 if($message.val() == ""){
+			$message.addClass("red");
+			return ; 
+		 }
+		 else{
+			 $message.removeClass("red");
+		 }
+         webSocket.send(msg);
+         $message.val('').focus();
+       }
+	
+	
+</script>
+</head>
+<body>
+
+
+	 
+<div class="container chat-signin">
+	 <h2 class="form-sgnin-heading">Chat Sign In</h2>
+	 <label for="nickName">Nickname</label>
+	 <input type="text" placeholder="NickName" id="nickName" class="input-block-level"/>
+	 <div class="btn-group">
+	 <label for="chatroom">Chatroom</label>
+	 <select id="chatroom">
+	 <option value="C">C</option>
+	 <option value="Java">Java</option>
+	 <option value="Grail">Grail</option>
+	 <option value="Groovy">Groovy</option>
+	 </select>
+	 </div>
+	 <button class="btn btn-large btn-primary" type="submit" id="enterRoom">Sign In</button>
+</div> 
+
+
+
+
+
+<div class="container chat-wrapper">
+<form action="" id="do-chat">
+<h2 class="alert alert-success"></h2>
+<div class="box">
+<table id="response" class="table table-bordered"></table>
+</div>
+<fieldset>
+<legend>Enter Your Message:</legend>
+<div class="controls">
+<input type="text" class="input-block-level" placeholder="your message..." id="message" style="height: 20px;"/>
+<input type="submit" class="btn btn-large btn-block btn-primary" value="message" />
+
+<button class="btn btn-large btn-block" type="button" id="leaveRoom"> Sign Off	</button>
+<input type="button" value="Close"  onclick="webSocket.close(1000, 'Yaaaa');"/>
+
+</div> 
+</fieldset>
+</form>
+</div>
+
+
+
+</body>
+</html>
