@@ -28,6 +28,9 @@ public class ChatMessageEncoder implements Encoder.Text<ChatMessage> {
 		return Json.createObjectBuilder()
 				.add("message", chatMessage.getMessage())
 				.add("sender", chatMessage.getSender())
-				.add("received", new Date().toString()).build().toString();
+				.add("received", new Date().toString())
+				.add("recent", chatMessage.getRecentImages()).build()
+				.toString();
+
 	}
 }

@@ -68,6 +68,8 @@
   <script type="text/javascript" src="jquery-2.1.0.js"></script> 
   <script type="text/javascript" src="jquery-ui.js"></script>
 <script lang="javascript"  type="text/javascript">
+
+//all fields
 var wsUri;
 //= getRooturi() + "/Sample/hello";
 var webSocket ; 
@@ -76,52 +78,107 @@ var $nickName;
 var $message;
 var $chatWindow;
 var room = '';
+var currentMsg;
 
-
+//connect to Server throught WebSocket(ws://.....)
 function connectToServer(){
 	room = $('#chatroom option:selected').val();
-	webSocket = new WebSocket(wsUri + room);
+	pwd  = $('#pwd').val();
+	webSocket = new WebSocket(wsUri +room + '&' + pwd);
 	webSocket.onmessage = onMessageReceived;
 }
 
 
+
+//on ready document
 $('document').ready(function(){
 	
+	//set all the fields values
 	wsUri = getRooturi() + "/Sample/hello/";
 	$nickName  = $('#nickName');
-	
 	$message = $('#message');
 	$chatWindow = $('#response');
 	$('.chat-wrapper').hide();
 	$nickName.focus();
 	
-	
+	//When You enetr the Room
 	$('#enterRoom').click(function(evt) {
+
+		//do default process on Entering room
 		evt.preventDefault();
 		connectToServer();
 		$('.chat-wrapper h2').text('Chat # '+ $nickName.val()  + "@" + room);
 		$('.chat-signin').hide(1000);
-		$('.chat-wrapper').show(1000);
-		$message.focus();
-	});
+		$('.chat-wrapper').show(1000);	
+		
+		
+		//In case password incorrect
+		setTimeout(function() {
+		      if(currentMsg.sender == "Server" && currentMsg.message == "Sorry,Wrong Password"){ 
+		      $('.chat-wrapper h2').text('logging Out,Incorrect Password');
+		      
+		      setTimeout(function() {
+			      $chatWindow.empty();				
+			  }, 2000);
+		      
+			  $('.chat-wrapper').hide(3000);
+			  $('.chat-signin').show(5000);
+			  $nickName.focus();
+			  
+		      }
+		}, 2000);
+		
+		//show-hide the Icons toolBar
+            $('#icons').click(function(evt) {
+            	evt.preventDefault();
+            	//evt.stoPropagation();
+            	$('#recentImages').toggle(200);
+			 });
+			
+		
+
+			//when you press Message(Send tye Message from a Successful Login)
+        	$('#do-chat').submit(function(evt) {
+        		evt.preventDefault();
+        		if(checkMessageOk()){
+        			send_message();
+        		}
+        	});
+			
+			
+			//Log Off, clear the chatWindow
+        	$('#leaveRoom').click(function(){
+        	      webSocket.close(1000, 'Leaving');
+        	      $chatWindow.empty();
+        	      currentMsg.recent = "";
+        	      $('#recentImages').innerHTML  = "";
+        		  $('.chat-wrapper').hide();
+        		  $('.chat-signin').show();
+        		  $nickName.focus();
+        	  });
+
+		
+			});//enterRoom.click
 	
-	
-	
-	$('#do-chat').submit(function(evt) {
-		evt.preventDefault();
-		send_message();
-	});
+			
+
 	
 	  
-	$('#leaveRoom').click(function(){
-	      webSocket.close(1000, 'Leaving');
-	      $chatWindow.empty();
-		  $('.chat-wrapper').hide();
-		  $('.chat-signin').show();
-		  $nickName.focus();
-	  });
 	
-	});
+	
+		}); //ready
+	
+	
+	
+	
+	
+	
+   	
+	
+	
+	
+
+	
 	
 // webSocket.onopen = function(evt){
 // 	onOpen(evt);
@@ -140,61 +197,58 @@ $('document').ready(function(){
 // };
 
 
-
-	function getRooturi (){
+     //get root with port
+	  function getRooturi (){
 		return "ws://" + window.location.host ;
 	   }
 	
-	
-
-	
-// 	function onOpen(evt){
-// 		   writeToScreen("Connected to Endpoint!");
-// 	}
-	
-// 	function onClose(evt){
-// 		 writeToScreen("Connection closed successfully");
-// 	}
-		
-// 	function onError(evt){
-// 		   writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
-// 		   webSocket.close(1000, "Error happened");
-// 	}
-	
-	
+	//on receiving message from Server, parse to JSon Object and 
 	function onMessageReceived(evt){
 		var msg = JSON.parse(evt.data);
+		currentMsg = msg;
 		var $messageLine = $('<tr class="small"><td class="received">' + msg.received
 		+ '</td><td class="user label label-info">' + msg.sender
 		+ '</td><td class="message badge">' + msg.message
 		+ '</td></tr>');
-		
 		$chatWindow.append($messageLine);
 	}
 	
 	
-// 	function writeToScreen(msg){
-// 		 var para = document.createElement("p");
-//          para.style.wordWrap = "break-word";
-//          para.innerHTML = msg;
-//          output.appendChild(para);
-// 	}
 	
+	
+	//send meesage to the Server, Stringify and send
 	function send_message(){
-		var msg = '{"message":"' + $message.val() + '", "sender":"'
-		+ $nickName.val() + '", "received":""}';
 		
-		 if($message.val() == ""){
-			$message.addClass("red");
-			return ; 
-		 }
-		 else{
-			 $message.removeClass("red");
-		 }
+// 		var data = {
+// 				'message':''+$message.val()+'',
+// 				'sender':''+$nickName.val()+'',
+// 				'received':'',
+// 				'recent':''
+// 		}
+// 		var str_data = JSON.stringify(data);
+		
+		var msg = '{"message":"' + $message.val() + '", "sender":"'
+		+ $nickName.val() + '", "received":"","recent":""}';
+		
+
          webSocket.send(msg);
          $message.val('').focus();
+         
        }
 	
+	
+	//validation for Message
+	function checkMessageOk(){
+     		 if($message.val() == ""){
+				$message.addClass("red");
+				return false; 
+			 }
+			 else{
+				 $message.removeClass("red");
+				 return true;
+			 }
+	}
+
 	
 </script>
 </head>
@@ -206,13 +260,13 @@ $('document').ready(function(){
 	 <h2 class="form-sgnin-heading">Chat Sign In</h2>
 	 <label for="nickName">Nickname</label>
 	 <input type="text" placeholder="NickName" id="nickName" class="input-block-level"/>
+	 <label for="pwd">Password</label>
+	 <input type="password"  id="pwd" class="input-block-level" />
 	 <div class="btn-group">
 	 <label for="chatroom">Chatroom</label>
 	 <select id="chatroom">
-	 <option value="C">C</option>
-	 <option value="Java">Java</option>
-	 <option value="Grail">Grail</option>
-	 <option value="Groovy">Groovy</option>
+	 <option value="friends">Friends</option>
+	 <option value="family">Family</option>
 	 </select>
 	 </div>
 	 <button class="btn btn-large btn-primary" type="submit" id="enterRoom">Sign In</button>
@@ -233,10 +287,10 @@ $('document').ready(function(){
 <div class="controls">
 <input type="text" class="input-block-level" placeholder="your message..." id="message" style="height: 20px;"/>
 <input type="submit" class="btn btn-large btn-block btn-primary" value="message" />
-
 <button class="btn btn-large btn-block" type="button" id="leaveRoom"> Sign Off	</button>
-<input type="button" value="Close"  onclick="webSocket.close(1000, 'Yaaaa');"/>
-
+<button id="icons" >ICONS</button>
+<div id="recentImages">
+</div>
 </div> 
 </fieldset>
 </form>

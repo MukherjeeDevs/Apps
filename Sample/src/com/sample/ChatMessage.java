@@ -4,9 +4,18 @@ public class ChatMessage {
 	private String message;
 	private String sender;
 	private String received;
+	private String recentImages = "";
 
 	public String getMessage() {
 		return message;
+	}
+
+	public void setRecentImages(String recentImages) {
+		this.recentImages = recentImages;
+	}
+
+	public String getRecentImages() {
+		return recentImages;
 	}
 
 	public void setMessage(String message) {

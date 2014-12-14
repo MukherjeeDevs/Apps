@@ -27,6 +27,7 @@ public class ChatMessageDecoder implements Decoder.Text<ChatMessage> {
 		chatMessage.setMessage(jsonObj.getString("message"));
 		chatMessage.setReceived(jsonObj.getString("received"));
 		chatMessage.setSender(jsonObj.getString("sender"));
+		chatMessage.setRecentImages(jsonObj.getString("recent"));
 
 		return chatMessage;
 	}
